@@ -2,7 +2,7 @@
 
 ### Introduction
 
-Dirty Portscanner simply scans the range of ports you supply and shows which one of them might be open. This it does by connecting to each specified port and checking if something comes back as a response. If it doesn't, a junk string is sent to the port and then it is checked again if there's any response. This is repeated for a specified number of times to probe the port till specified timeout.
+DirtyPortScanner simply scans the range of ports you supply and shows which one of them might be open. This it does by connecting to each specified port and checking if something comes back as a response. If it doesn't, a junk string is sent to the port and then it is checked again if there's any response. This is repeated for a specified number of times to probe the port till specified timeout.
 
 ### Usage
 
