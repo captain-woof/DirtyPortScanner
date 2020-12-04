@@ -14,7 +14,7 @@ optional arguments:
   -a ADDRESS, --address ADDRESS
                         The destination host to probe
   -p PORT_RANGE, --port-range PORT_RANGE
-                        The ports to probe; separate ports by a comma ',', ranges by a hyphen '-' |
+                        The ports to probe; separate ports by a comma (,) and ranges by a hyphen (-)
                         Example: 1-1000,3289,4444,8000-9000...
   -t THREADS, --threads THREADS
                         The maximum number of concurrent threads to use; default is 10
@@ -27,6 +27,9 @@ optional arguments:
   -o OUTPUT, --output OUTPUT
                         Save scan results to a file with specified filename
 ```
+
+### Windows Executable
+Generated with PyInstaller on Windows 7, so it should work on any version of Windows 7 and above.
 
 ### Author
 
