@@ -212,6 +212,8 @@ parser = ArgumentParser(description="""
 DirtyPortScanner simply scans the range of ports you supply and shows which one of them might be open. This it does by connecting to each specified port, and checking if a connection is made, which indicates an open port. Any response (like a banner) is checked as well by sending desired strings to each port.
 
 Also, you can directly invoke nmap with the results of DirtyPortScanner if you wish, along with your chosen nmap arguments. See usage below.
+
+The maximum number of concurrent threads is the maximum number of ports that will be scanned simultaneously.
 """, add_help=True, epilog="Author: CaptainWoof | Twitter: @realCaptainWoof")
 parser.add_argument("-a", "--address", action='store', type=str, required=True, help="The destination host to probe")
 parser.add_argument("-p", "--port-range", action='store', type=str, required=True, help="The ports to probe; separate "
