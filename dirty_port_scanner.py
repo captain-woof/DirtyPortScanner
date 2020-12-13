@@ -156,7 +156,13 @@ class DirtyPortScanner:
                 exit(0)
 
             # Run nmap
-            nmap_output = ['-oN','nmap_' + self.output_filename] if self.output_filename else []
+            nmap_output = []
+            if self.output_filename:
+                if "." in self.output_filename:
+                    nmap_filename = self.output_filename.replace(".","_nmap.")
+                else:
+                    nmap_filename = self.output_filename + '_nmap'
+                nmap_output = ['-oN',nmap_filename]
             run = [self.nmap_path,'-p',port_list] + [args for args in self.nmap.split(" ")] + nmap_output + [self.addr]
             print("[+] Nmap => ",end="")
             for each in run:
@@ -208,13 +214,14 @@ class DirtyPortScanner:
 
 # MAIN
 # Usage: portscan.py -a address -p port_range -t threads --banner -m max_tries
-parser = ArgumentParser(description="""
-DirtyPortScanner simply scans the range of ports you supply and shows which one of them might be open. This it does by connecting to each specified port, and checking if a connection is made, which indicates an open port. Any response (like a banner) is checked as well by sending desired strings to each port.
-
-Also, you can directly invoke nmap with the results of DirtyPortScanner if you wish, along with your chosen nmap arguments. See usage below.
-
-The maximum number of concurrent threads is the maximum number of ports that will be scanned simultaneously.
-""", add_help=True, epilog="Author: CaptainWoof | Twitter: @realCaptainWoof")
+parser = ArgumentParser(description="Dirty Portscanner simply scans the range of ports you supply and "
+                                    "shows which one of them might be open. This it does by connecting "
+                                    "to each specified port and checking if something comes back as a "
+                                    "response. If it doesn't, a junk string is sent to the port and then "
+                                    "it is checked again if there's any response. This is repeated for a specified "
+                                    "number of times to probe the port till specified timeout.",
+                        add_help=True, epilog="Author: CaptainWoof | "
+                                              "Twitter: @realCaptainWoof")
 parser.add_argument("-a", "--address", action='store', type=str, required=True, help="The destination host to probe")
 parser.add_argument("-p", "--port-range", action='store', type=str, required=True, help="The ports to probe; separate "
                                                                                         "ports by a comma ',', ranges by "
@@ -265,3 +272,4 @@ port_scanner = DirtyPortScanner(argv.address, argv.port_range, argv.threads, arg
                                 argv.output, argv.nmap, argv.nmap_ports,argv.nmap_path,argv.probe_string,
                                 argv.probe_string_file)
 port_scanner.start()
+
