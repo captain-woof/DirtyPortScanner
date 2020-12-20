@@ -8,6 +8,10 @@ Also, you can directly invoke nmap with the results of DirtyPortScanner if you w
 
 **The maximum number of concurrent threads is the maximum number of ports that will be scanned simultaneously, so crank it up to get amazing speeds. If very, very high number of threads crash the script, simply reduce this.**
 
+### Preview
+
+![Preview](https://drive.google.com/uc?export=view&id=1UPFK0iZFrH9hLC65sRU6RMMiwhLxrflN)
+
 ### Usage
 
 ```

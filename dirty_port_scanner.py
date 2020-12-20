@@ -225,7 +225,7 @@ class DirtyPortScanner:
 
 
 # MAIN
-parser = ArgumentParser(description="Dirty Portscanner simply scans the range of ports you supply and "
+parser = ArgumentParser(description="DirtyPortScanner simply scans the range of ports you supply and "
                                     "shows which one of them might be open, plus any banners if any. This "
                                     "it does by connecting to each specified port and checking if "
                                     "something comes back as a response. If it doesn't, a junk string "
