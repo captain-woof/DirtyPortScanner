@@ -4,6 +4,7 @@ from threading import Thread
 from socket import AF_INET, SOCK_STREAM, socket
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE, STDOUT
+from time import sleep
 
 
 class DirtyPortScanner:
@@ -15,12 +16,23 @@ class DirtyPortScanner:
             except:
                 print("Could not write to " + self.output_filename)
 
-    def __init__(self, addr, p, threads, max, banner, timeout, output, nmap, nmapPorts, nmapPath, junk, junkFile):
+    def Selected(self, text):
+        return '\33[7m' +'\33[1m' + text + '\033[0m'
+
+    def Redbg(self, text):
+        return '\33[41m' +'\33[1m' + text + '\033[0m'
+
+    def Greenbg(self, text):
+        return '\33[42m' +'\33[1m' + text + '\033[0m'
+
+    def Bluebg2(self, text):
+        return '\33[104m' +'\33[1m' + text + '\033[0m'
+
+    def __init__(self, addr, p, threads, max, timeout, output, nmap, nmapPorts, nmapPath, junk, junkFile, b):
         self.addr = addr
         self.port_ranges = []  # 1-100,245,3000-4000
         self.max_threads = threads
         self.max_tries = max
-        self.display_banner = banner
         self.timeout = timeout
         self.port_range_display = p
         self.output_filename = output
@@ -29,9 +41,7 @@ class DirtyPortScanner:
         self.nmap_path = nmapPath
         self.junk = junk.encode()
         self.jfname = junkFile
-
-        self.__blink = '\33[5m'
-        self.__reset = '\033[0m'
+        self.full_banner = b
 
         for each_port_range in p.split(","):
             l = []
@@ -49,15 +59,12 @@ class DirtyPortScanner:
                     line = f.readlines()
                 self.junk = b"".join(line)
             except FileNotFoundError:
-                print("\n[!] Probe strings file not found!\n    Continuing with default...")
+                print("\n"+self.Redbg(" ! ")+" Probe strings file not found!\n    Continuing with default...")
             except:
-                print("\n[!] Encountered error while reading probe strings file!\n    Continuing with default...")
-
-    def Blink(self, text):
-        return self.__blink + text + self.__reset
+                print("\n"+self.Redbg(" ! ")+"Encountered error while reading probe strings file!\n    Continuing with default...")
 
     def start(self):
-        initial = "SCAN OPTIONS SET"
+        initial = self.Selected("[+]")+" CONFIGURATION"
         initial += "\n----------------"
         initial += "\nTarget host => " + self.addr
         initial += '\nTarget port ranges => ' + self.port_range_display
@@ -69,7 +76,6 @@ class DirtyPortScanner:
             initial +=  str(self.junk)
         except UnicodeDecodeError:
             initial += "Could not be decoded to show here"
-        initial += "\nDisplay grabbed banner => " + str(self.display_banner)
         if self.nmap:
             initial += "\nNmap args => " + str(self.nmap)
             initial += "\nNmap ports => " + self.nmap_ports
@@ -79,8 +85,11 @@ class DirtyPortScanner:
         if self.output_filename:
             print("\nSave scan results to file => " + self.output_filename)
             self.save_result(initial)
-        print("\n\nSCANNING\n----------------")
-        print(self.Blink("..."))
+        print("\n\n"+self.Selected("[+]")+" RESULTS")
+        for i in range(0,16):
+            print("-",end="",flush=True)
+            sleep(1/9)
+        print("")
         for each_port_range in self.port_ranges:
             if len(each_port_range) == 2:
                 for port in range(each_port_range[0], each_port_range[1] + 1):
@@ -102,40 +111,30 @@ class DirtyPortScanner:
 
         for thread in self.threads:
             thread.join()
-        print("\r" + " " * 24 + "\n[+] All specified ports scanned!\n\nRESULTS\n----------------\n[+] Found " + str(
-            len(self.found_ports)) + " open port/s\n")
+        print("\r" + " " * 24 + "\n[✓] All specified ports scanned!\n")
+        print(self.Selected("[+]")+" SUMMARY\n----------------")
+        print(self.Bluebg2(" * ")+" Found " + str(len(self.found_ports)) + " open port/s")
         self.save_result(
             "\nSCAN RESULTS\n----------------\n[+] Found " + str(len(self.found_ports)) + " open port/s\n\n")
 
         if len(self.found_ports) != 0:
-            if self.display_banner:
-                i = 1
-                for port_and_banner in self.found_ports:
-                    print("[" + str(i) + "] Port -> " + str(port_and_banner[0]))
-                    print("    Banner -> " + port_and_banner[1], end="\n\n")
-
-                    self.save_result("[" + str(i) + "] Port -> " + str(port_and_banner[0]) + '\n')
-                    self.save_result("    Banner -> " + port_and_banner[1] + "\n\n")
-
-                    i += 1
-            else:
-                line = "[+] Ports open => "
-                for port in self.found_ports:
-                    line += str(port[0]) + ","
-                print(line[:-1])
-                print("")
-                self.save_result(line[:-1] + '\n\n')
+            line = "[*] Ports open => "
+            for port in self.found_ports:
+                line += str(port[0]) + ","
+            print(line[:-1])
+            print("")
+            self.save_result(line[:-1] + '\n\n')
 
             self.runNmap()
 
         else:
-            print("[!] No ports were found open!")
+            print(self.Redbg(" ! ")+" No ports were found open!")
 
     # nmap function
     def runNmap(self):
         if self.nmap is not None:
             port_list = ""
-            print("\n\n[..] Time for the Nmap scan now!\n---------------------------------")
+            print("\n\n"+self.Selected("[+]")+" Time for the Nmap scan now!\n---------------------------------")
 
             # Setting up ports to scan
             if self.nmap_ports == 'discovered':
@@ -148,11 +147,13 @@ class DirtyPortScanner:
                 port_list = input("Enter comma-separated ports and/or hyphen-separated port ranges to scan: ")
 
             # Check if nmap is not installed
-            nmap_check = Popen([self.nmap_path, '-V'], stdout=PIPE, stderr=PIPE, stdin=None)
-            out, err = nmap_check.communicate()
-            if 'Nmap version' not in (out + err).decode():
-                print("[!] nmap could not be found\n\nYour nmap command would be:")
-                print("[..] nmap -p " + port_list + ' ' + self.nmap + ' ' + self.addr,end="\n\n")
+            try:
+                nmap_check = Popen([self.nmap_path, '-V'], stdout=PIPE, stderr=PIPE, stdin=None)
+                out, err = nmap_check.communicate()
+
+            except FileNotFoundError:
+                print(self.Redbg(" ! ") + " nmap could not be found\n\nYour nmap command would be:")
+                print("[..] nmap -p " + port_list + ' ' + self.nmap + ' ' + self.addr, end="\n\n")
                 exit(0)
 
             # Run nmap
@@ -178,32 +179,43 @@ class DirtyPortScanner:
         client.settimeout(self.timeout)
         port_and_banner = []
 
-        try:
+        try: # Try to connect
             client.connect((addr, port))
-            print("\r[+] Found port " + str(port))
             port_and_banner.append(port)
             port_and_banner.append("No banner received!")
             self.found_ports.append(port_and_banner)
-            response = client.recv(1024)
-            if len(response) != 0:
-                try:
-                    r = response.decode().strip()
+            try: # Try to receive response
+                response = client.recv(1024)
+                try: # Try decoding the response
+                    if self.full_banner:
+                        r = response.decode().strip()
+                    else:
+                        r = response.decode().split("\n")[0]
                 except UnicodeDecodeError:
                     r = "Banner received but cannot decode"
-                port_and_banner[1] = r
-            else:
+                finally:
+                    port_and_banner[1] = r
+            except: # Try to send string and then receive response
                 for try_num in range(0, self.max_tries + 1):
                     client.sendall(self.junk)
-                    response = client.recv(1024)
-                    if len(response) != 0:
-                        try:
-                            r = response.decode().strip()
+                    try: # Try to receive response of sent string
+                        response = client.recv(1024)
+                        try: # Try decoding the response
+                            if self.full_banner:
+                                r = response.decode().strip()
+                            else:
+                                r = response.decode().split("\n")[0]
                         except UnicodeDecodeError:
                             r = "Banner received but cannot decode"
                         port_and_banner[1] = r
                         break
+                    except: # No response received
+                        continue
+            print("\r"+self.Greenbg(" ->")+" Found port " + str(port_and_banner[0]) + " -> " + port_and_banner[1])
+            if self.full_banner:
+                print("")
 
-        except ConnectionRefusedError:
+        except ConnectionRefusedError: # If connection got refused
             pass
 
         finally:
@@ -213,13 +225,13 @@ class DirtyPortScanner:
 
 
 # MAIN
-# Usage: portscan.py -a address -p port_range -t threads --banner -m max_tries
 parser = ArgumentParser(description="Dirty Portscanner simply scans the range of ports you supply and "
-                                    "shows which one of them might be open. This it does by connecting "
-                                    "to each specified port and checking if something comes back as a "
-                                    "response. If it doesn't, a junk string is sent to the port and then "
-                                    "it is checked again if there's any response. This is repeated for a specified "
-                                    "number of times to probe the port till specified timeout.",
+                                    "shows which one of them might be open, plus any banners if any. This "
+                                    "it does by connecting to each specified port and checking if "
+                                    "something comes back as a response. If it doesn't, a junk string "
+                                    "is sent to the port and then it is checked again if there's any "
+                                    "response. This is repeated for a specified number of times to probe "
+                                    "the port till specified timeout.",
                         add_help=True, epilog="Author: CaptainWoof | "
                                               "Twitter: @realCaptainWoof")
 parser.add_argument("-a", "--address", action='store', type=str, required=True, help="The destination host to probe")
@@ -245,10 +257,6 @@ junk_group.add_argument('-j',"--probe-string",action='store',type=str,required=F
 junk_group.add_argument('-J',"--probe-string-file",action='store',type=str,required=False,default=None
                     ,help="Choose a custom file which contains strings to probe ports with; "
                           "provided file will be read in binary mode")
-
-parser.add_argument( "--banner", "-b", action="store_true", default=False, required=False,
-                    help="Display grabbed banner; "
-                         "non-default")
 parser.add_argument("-o", "--output", action='store', type=str, required=False, default=False,
                     help="Save scan results to a file with specified filename; "
                          "using with nmap will output nmap results to another file with same name "
@@ -266,10 +274,11 @@ parser.add_argument("--nmap-ports", '-P', required=False, default='discovered', 
 parser.add_argument("--nmap-path",action='store',default='nmap',required=False,type=str,
                     help="Path to nmap; no need to use this option if nmap is in PATH "
                          "with the proper name")
+parser.add_argument("--full-banner",'-b',action='store_true',default=False,required=False,
+                    help="Display the full banner received instead of only the first line (default)")
 argv = parser.parse_args()
 
-port_scanner = DirtyPortScanner(argv.address, argv.port_range, argv.threads, argv.max_tries, argv.banner, argv.timeout,
+port_scanner = DirtyPortScanner(argv.address, argv.port_range, argv.threads, argv.max_tries, argv.timeout,
                                 argv.output, argv.nmap, argv.nmap_ports,argv.nmap_path,argv.probe_string,
-                                argv.probe_string_file)
+                                argv.probe_string_file,argv.full_banner)
 port_scanner.start()
-

@@ -2,7 +2,7 @@
 
 ### Introduction
 
-DirtyPortScanner simply scans the range of ports you supply and shows which one of them might be open. This it does by connecting to each specified port, and checking if a connection is made, which indicates an open port. Any response (like a banner) is checked as well by sending desired strings to each port.
+DirtyPortScanner simply scans the range of ports you supply and shows which one of them might be open, plus any banners if any. This it does by connecting to each specified port, and checking if a connection is made, which indicates an open port. Any response (like a banner) is checked as well by sending desired strings to each port.
 
 Also, you can directly invoke nmap with the results of DirtyPortScanner if you wish, along with your chosen nmap arguments. See usage below.
 
@@ -11,10 +11,10 @@ Also, you can directly invoke nmap with the results of DirtyPortScanner if you w
 ### Usage
 
 ```
-usage: dirty_port_scanner.py [-h] -a ADDRESS -p PORT_RANGE [-t THREADS] [-m MAX_TRIES]
-                             [-u TIMEOUT] [-j PROBE_STRING | -J PROBE_STRING_FILE] [--banner]
-                             [-o OUTPUT] [--nmap NMAP] [--nmap-ports {discovered,all,manual}]
-                             [--nmap-path NMAP_PATH]
+usage: dirty_port_scanner.py [-h] -a ADDRESS -p PORT_RANGE [-t THREADS] [-m MAX_TRIES] [-u TIMEOUT]
+                             [-j PROBE_STRING | -J PROBE_STRING_FILE] [-o OUTPUT] [--nmap NMAP]
+                             [--nmap-ports {discovered,all,manual}] [--nmap-path NMAP_PATH]
+                             [--full-banner]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -37,7 +37,6 @@ optional arguments:
   -J PROBE_STRING_FILE, --probe-string-file PROBE_STRING_FILE
                         Choose a custom file which contains strings to probe ports with; provided
                         file will be read in binary mode
-  --banner, -b          Display grabbed banner; non-default
   -o OUTPUT, --output OUTPUT
                         Save scan results to a file with specified filename; using with nmap will
                         output nmap results to another file with same name but with '_nmap' as
@@ -52,7 +51,8 @@ optional arguments:
                         default is 'discovered'
   --nmap-path NMAP_PATH
                         Path to nmap; no need to use this option if nmap is in PATH with the
-                        proper name
+                        proper name                        
+  --full-banner, -b     Display the full banner received instead of only the first line (default)
 ```
 
 ### Windows Executable
