@@ -57,6 +57,8 @@ optional arguments:
                         Path to nmap; no need to use this option if nmap is in PATH with the
                         proper name                        
   --full-banner, -b     Display the full banner received instead of only the first line (default)
+  --banner-number BANNER_NUMBER, -bn BANNER_NUMBER
+                        Choose the nth banner to grab and display (default: 1st banner)
 ```
 
 ### Windows Executable
