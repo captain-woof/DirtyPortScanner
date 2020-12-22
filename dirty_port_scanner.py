@@ -39,13 +39,14 @@ def Blink(text):
 
 
 class DirtyPortScanner:
+
     def save_result(self, s):
         if self.output_filename:
-            try:
-                with open(self.output_filename, "a+") as f:
-                    f.writelines(s)
-            except:
-                print("Could not write to " + self.output_filename)
+            with self.file_output_lock:
+                try:
+                    self.output_file.writelines(s)
+                except:
+                    print("Could not write to " + self.output_filename)
 
     def print_ui_transient(self, text, sameline):
         with self.print_lock:
@@ -83,6 +84,14 @@ class DirtyPortScanner:
         self.requests_sent = 0
         self.requests_sent_lock = Lock()
         self.size_of_previous_line = 0
+        self.file_output_lock = Lock()
+
+        if self.output_filename:
+            try:
+                self.output_file = open(self.output_filename, "w+")
+            except:
+                print(Redbg(" ! ") + " Could not open " + self.output_filename + " for writing")
+                exit(1)
 
         for each_port_range in p.split(","):
             if "-" not in each_port_range:  # Which means, single port
@@ -122,6 +131,8 @@ class DirtyPortScanner:
             if self.full_banner:
                 line += "\n"
             self.print_ui_transient(line, False)
+            line = " -> Found port " + str(port_and_banner[0]) + " -> " + port_and_banner[1]
+            self.save_result(line)
         return  # Close the output handler thread
 
     def progressCounterFunc(self):
@@ -148,8 +159,19 @@ class DirtyPortScanner:
         duration = "{}h {}m {:.0f}s".format(hours, minutes, seconds)
         return duration
 
+    def print_banner(self):
+        banner = r"""
+   ___  _     __       ___           __  ____                          
+  / _ \(_)___/ /___ __/ _ \___  ____/ /_/ __/______ ____  ___  ___ ____
+ / // / / __/ __/ // / ___/ _ \/ __/ __/\ \/ __/ _ `/ _ \/ _ \/ -_) __/
+/____/_/_/  \__/\_, /_/   \___/_/  \__/___/\__/\_,_/_//_/_//_/\__/_/
+               /___/ v1.2
+"""
+        print(banner,end="")
+
     def start(self):
         self.start_time = time_now()
+        self.print_banner()
         # Print configurations
         initial = Selected("[+]") + " CONFIGURATION"
         initial += "\n----------------"
@@ -178,9 +200,11 @@ class DirtyPortScanner:
         print('\n' + initial, end="")
         if self.output_filename:
             print("\nSave scan results to file => " + self.output_filename)
-            self.save_result(initial)
+            initial = initial.replace('\33[7m','').replace('\33[1m','').replace('\33[0m', '')
+            self.save_result(initial+"\n")
         print(
             "\n\n" + Selected("[") + Blink(Selected("+")) + Selected("]") + " RESULTS\n" + "-" * 16)
+        self.save_result("\n\n[+] RESULTS\n" + "-" * 16 + '\n')
 
         # START OUTPUT HANDLER AND PROGRESS COUNTER HERE
         self.outputHandler.start()
@@ -204,10 +228,10 @@ class DirtyPortScanner:
         print("\r" + " " * self.size_of_previous_line + "\n[✓] All specified ports scanned!\n")
         print(Selected("[+]") + " SUMMARY\n----------------")
         print(Bluebg2(" * ") + " Found " + str(len(self.found_ports)) +
-              " open port/s - Elapsed time: " + self.getDuration())
+              " open port(s) - Elapsed time: " + self.getDuration())
         self.save_result(
-            "\nSCAN RESULTS\n----------------\n[+] Found " + str(len(self.found_ports)) + " open port/s"+
-             "- Elapsed time: " + self.getDuration()+"\n\n")
+            "\n\n[+] SUMMARY\n----------------\n[*] Found " + str(len(self.found_ports)) + " open port(s)"+
+             " - Elapsed time: " + self.getDuration()+"\n")
 
         if len(self.found_ports) != 0:
             line = "[*] Ports open => "
@@ -216,6 +240,7 @@ class DirtyPortScanner:
             print(line[:-1])
             print("")
             self.save_result(line[:-1] + '\n\n')
+            self.output_file.close()
 
             self.runNmap()  # Run nmap (if specified)
 
